@@ -1,0 +1,162 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceGroupName": {
+            "type": "string"
+        },
+        "logicAppName": {
+            "type": "string"
+        },
+        "automationAccountName": {
+            "type": "string"
+        },
+        "runbookName": {
+            "type": "string"
+        },
+        "siteTemplateSharePointSiteUrl": {
+            "type": "string"
+        },
+        "siteTemplateSharePointDocumentLibraryName": {
+            "type": "string"
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2019-05-01",
+            "name": "[parameters('logicAppName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "actions": {
+                        "StartAzureAutomationRunbookJob": {
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureautomation']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/jobs",
+                                "body": {
+                                    "properties": {
+                                        "runbook": {
+                                            "name": "[parameters('runbookName')]"
+                                        },
+                                        "parameters": {
+                                            "SharePointSiteURL": "@triggerOutputs()?['headers']['x-ms-sharepoint-site-url']"
+                                        }
+                                    }
+                                }
+                            },
+                            "runAfter": {},
+                            "type": "ApiConnection"
+                        }
+                    },
+                    "outputs": {},
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "manual": {
+                            "type": "Request",
+                            "kind": "Http",
+                            "inputs": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "SharePointSiteURL": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "azureautomation": {
+                                "connectionId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('resourceGroupName'), '/providers/Microsoft.Web/connections/azureautomation')]",
+                                "connectionName": "azureautomation",
+                                "id": "/subscriptions/{subscriptionId}/providers/Microsoft.Web/locations/{location}/managedApis/azureautomation"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Automation/automationAccounts",
+            "apiVersion": "2018-06-30",
+            "name": "[parameters('automationAccountName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "sku": {
+                    "name": "Basic"
+                }
+            },
+            "resources": [
+                {
+                    "type": "variables",
+                    "apiVersion": "2018-06-30",
+                    "name": "SiteTemplateSharePointSiteUrl",
+                    "dependsOn": [
+                        "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]"
+                    ],
+                    "properties": {
+                        "value": "[parameters('siteTemplateSharePointSiteUrl')]"
+                    }
+                },
+                {
+                    "type": "variables",
+                    "apiVersion": "2018-06-30",
+                    "name": "SiteTemplateSharePointDocumentLibraryName",
+                    "dependsOn": [
+                        "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]"
+                    ],
+                    "properties": {
+                        "value": "[parameters('siteTemplateSharePointDocumentLibraryName')]"
+                    }
+                },
+                {
+                    "type": "modules",
+                    "apiVersion": "2018-06-30",
+                    "name": "PnP.PowerShell",
+                    "dependsOn": [
+                        "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]"
+                    ],
+                    "properties": {
+                        "contentLink": {
+                            "uri": "https://www.powershellgallery.com/api/v2/package/PnP.PowerShell"
+                        }
+                    }
+                },
+                {
+                    "type": "runbooks",
+                    "apiVersion": "2018-06-30",
+                    "name": "[parameters('runbookName')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]"
+                    ],
+                    "properties": {
+                        "runbookType": "PowerShell",
+                        "logProgress": "false",
+                        "logVerbose": "false",
+                        "description": "Runbook to deploy SharePoint site template and set homepage.",
+                        "publishContentLink": {
+                            "uri": "https://raw.githubusercontent.com/JakeGwynn/SharePoint_Page_Homepage_Automation/main/Deploy-PagesAndHomePage.ps1",
+                            "version": "1.0.0.0"
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
