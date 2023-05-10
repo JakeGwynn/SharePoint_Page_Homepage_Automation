@@ -8,8 +8,8 @@ A SharePoint Online site and document library is needed to house the different s
 1.  Trigger - Webhook 
     - Schema:
 		- HomePage Name (optional): Contains name of homepage to apply to site. The homepage can also be specified in the template.xml file instead of here.
-		- templateName: Name of template.xml file to apply to the SharePoint site
-		- webUrl: URL of SharePoint site that will get template applied to it.
+		- `templateName`: Name of template.xml file to apply to the SharePoint site
+		- `webUrl`: URL of SharePoint site that will get template applied to it.
             ```{
                 "properties": {
                     "parameters": {
@@ -28,7 +28,7 @@ A SharePoint Online site and document library is needed to house the different s
                     }
                 },
                 "type": "object"
-            }```
+            }
 				
 2. Action - Trigger Azure Automation Runbook
 
@@ -52,25 +52,26 @@ A SharePoint Online site and document library is needed to house the different s
 ## 4. Site Design
 1. Create Site Script (Get-SPOSiteScriptFromWeb)
 2. Add Power Automate/Logic App Action
-    ```$JSON = @'
-    {
-        "$schema": "schema.json",
-        "actions": [
+        
+        $JSON = @'
         {
-                "verb": "triggerFlow",
-                "url": "https://prod-19.westus2.logic.azure.com:443/workflows/785cf8d0b5464e9c8c137499276a8494/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=287DEZfUNkwqArbrSCINaQjrfUgP0yzAmjgMXCN_Zqc",
-                "name": "Apply Template",
-                "parameters": {
-                    "templateName":"SiteTemplate.xml",
-                    "homepageName": "JakePage1.aspx"
-                }
+            "$schema": "schema.json",
+            "actions": [
+            {
+                    "verb": "triggerFlow",
+                    "url": "https://prod-19.westus2.logic.azure.com:443/workflows/785cf8d0b5464e9c8c137499276a8494/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=287DEZfUNkwqArbrSCINaQjrfUgP0yzAmjgMXCN_Zqc",
+                    "name": "Apply Template",
+                    "parameters": {
+                        "templateName":"SiteTemplate.xml",
+                        "homepageName": "JakePage1.aspx"
+                    }
+            }
+            ],
+            "bindata": {},
+            "version": 1
         }
-        ],
-        "bindata": {},
-        "version": 1
-    }
-    '@```
+        '@
 3. Upload Site Script 
-	- Add-PnPSiteScript -Title "Apply PnP SiteTemplate.xml for JakePage1.aspx - Runbook Direct" -Content $JSON
+	- `Add-PnPSiteScript -Title "Apply PnP SiteTemplate.xml for JakePage1.aspx - Runbook Direct" -Content $JSON`
 	- Create Site Design - Creates the template in SPO User's view that user's can apply to their SharePoint site
-Add-PnPSiteDesign -Title "Site with SiteTemplate.xml" -SiteScriptIds da7d1e4a-f208-4eb0-867d-c461c9a56bf1 -WebTemplate TeamSite
+    - `Add-PnPSiteDesign -Title "Site with SiteTemplate.xml" -SiteScriptIds <Replace withyourSiteID> -WebTemplate TeamSite`
