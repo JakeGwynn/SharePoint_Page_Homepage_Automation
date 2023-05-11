@@ -31,15 +31,19 @@ A SharePoint Online site and document library is needed to house the different s
             }
 				
 2. Action - Trigger Azure Automation Runbook
+3. Managed Identity - enable the "System assigned" managed identity.
 
 ## 3. Azure Automation Runbook - [How to create a PowerShell Workflow runbook](https://learn.microsoft.com/en-us/azure/automation/learn/automation-tutorial-runbook-textual)
 
-1. Variables:
+1.  Access Control (IAM):
+    - To allow the Logic App to start this Runbook, we assign the Logic App System assigned managed identity the "Automation Operator" role in the Azure Automation Account. 
+    - [How to assign an Azure Role](https://learn.microsoft.com/en-us/azure/role-based-access-control/role-assignments-portal)
+3.  Variables:
     - `SiteTemplateSharePointSiteUrl` - URL for SharePoint Site that will store Site Template XML files
     - `SiteTemplateSharePointDocumentLibraryName` - Document Library name for SharePoint Site Document Library that will store Site Template XML files
-2. Credentials:
+4. Credentials:
     - Create a credential called "AppRegistration" that has the AppId of the app registration in the UserName field and the ClientSecret in the password field.
-2. Runbook:
+5. Runbook:
     - Parameters
         - `$SharePointSiteURL`: Site to apply template to (webUrl from LogicApp)
         - `$TemplateFileName`: template.xml file name for template xml file to apply to site. 
